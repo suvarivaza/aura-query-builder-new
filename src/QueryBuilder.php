@@ -11,6 +11,7 @@ class QueryBuilder
 {
 
     private $pdo;
+    private $queryFactory;
     protected $prefix = '';
     protected $action;
 
