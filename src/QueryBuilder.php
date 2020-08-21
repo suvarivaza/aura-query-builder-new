@@ -15,6 +15,7 @@ class QueryBuilder
     protected $prefix = '';
     protected $action;
 
+
     /*
      * Create connection in constructor
      * Gets the argument array with database connection configuration
