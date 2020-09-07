@@ -20,30 +20,15 @@ class QueryBuilder
      * Create connection in constructor
      * Gets the argument array with database connection configuration
      *
-     * @param array $config
-     * throw PDOException
+     * @param PDO connection
+     * @param QueryFactory object
+     *
      */
-    function __construct($config)
+    function __construct(PDO $pdo, QueryFactory $QueryFactory)
     {
 
-        $this->prefix = $config['prefix'];
-        try {
-            $db_server = $config['host'];
-            $db_user = $config['db_user'];
-            $db_password = $config['db_password'];
-            $db_name = $config['db_name'];
-            $charset = $config['charset'];
-            $dsn = "mysql:host=$db_server;dbname=$db_name;charset=$charset";
-            $options = $config['options'];
-            $this->pdo = new PDO($dsn, $db_user, $db_password, $options);
-
-
-        } catch (PDOException $exception) {
-            $this->error = $exception->getMessage();
-            die($exception->getMessage());
-        }
-
-        $this->queryFactory = new QueryFactory('mysql');
+        $this->pdo = $pdo; // PDO connection
+        $this->queryFactory = $QueryFactory; // Object QueryFactory class for database
     }
 
 
@@ -195,6 +180,30 @@ class QueryBuilder
     {
 
         return $this->execute(null, $data_type);
+    }
+
+    public function getPdo(){
+        return $this->pdo;
+    }
+
+    public function limit($value){
+        $this->action->limit($value);
+        return $this;
+    }
+
+    public function offset($value){
+        $this->action->offset($value);
+        return $this;
+    }
+
+    public function setPaging($value){
+        $this->action->setPaging($value);
+        return $this;
+    }
+
+    public function page($value){
+        $this->action->page($value);
+        return $this;
     }
 
 }
