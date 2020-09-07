@@ -27,6 +27,7 @@ class QueryBuilder
     function __construct(PDO $pdo, QueryFactory $QueryFactory)
     {
 
+
         $this->pdo = $pdo; // PDO connection
         $this->queryFactory = $QueryFactory; // Object QueryFactory class for database
     }
