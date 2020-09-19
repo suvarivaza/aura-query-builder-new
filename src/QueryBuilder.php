@@ -17,7 +17,7 @@ class QueryBuilder
     public static $errors = [];
     private  $pdo;
     private static $queryFactory;
-    private $prefix = '';
+    private static $prefix = '';
     private $action;
 
 
@@ -39,6 +39,7 @@ class QueryBuilder
     public static function getInstance($config = null)
     {
 
+
         if(!isset(self::$instance)){
 
             if(!$config){
@@ -51,13 +52,16 @@ class QueryBuilder
             }
 
             $pdo = self::getPdo($config);
-            self::$instance = new QueryBuilder($pdo, new QueryFactory('mysql'));
+            $QueryFactory = new QueryFactory('mysql');
+            self::$instance = new QueryBuilder($pdo, $QueryFactory);
         }
 
         return self::$instance;
     }
 
     private static function getPdo($config){
+
+        self::$prefix = $config['prefix'];
 
         try {
             $db_server = $config['host'];
@@ -68,6 +72,7 @@ class QueryBuilder
             $dsn = "mysql:host=$db_server;dbname=$db_name;charset=$charset";
             $options = $config['options'];
             $pdo = new PDO($dsn, $db_user, $db_password, $options);
+
 
         } catch (PDOException $exception) {
             self::$errors['PDOException'] = $exception->getMessage();
@@ -103,7 +108,8 @@ class QueryBuilder
     public function insert($table)
     {
         $insert = self::$queryFactory->newInsert();
-        $this->action =  $insert->into("{$this->prefix}{$table}");
+        $table = self::$prefix . $table;
+        $this->action =  $insert->into($table);
         return $this;
     }
 
@@ -127,7 +133,8 @@ class QueryBuilder
      */
     public function from($table)
     {
-        $this->action->fromRaw("{$this->prefix}{$table}");
+        $table = self::$prefix . $table;
+        $this->action->fromRaw($table);
         return $this;
     }
 
@@ -140,7 +147,8 @@ class QueryBuilder
     public function update($table)
     {
         $update = self::$queryFactory->newUpdate();
-        $this->action = $update->table("{$this->prefix}{$table}");
+        $table = self::$prefix . $table;
+        $this->action = $update->table($table);
         return $this;
     }
 
@@ -152,7 +160,8 @@ class QueryBuilder
     public function delete($table)
     {
         $delete = self::$queryFactory->newDelete();
-        $this->action = $delete->from("{$this->prefix}{$table}");
+        $table = self::$prefix . $table;
+        $this->action = $delete->from($table);
         return $this;
     }
 
@@ -181,6 +190,7 @@ class QueryBuilder
         }
 
         $sth = $this->pdo->prepare($this->action->getStatement());
+
         $sth->execute($this->action->getBindValues());
 
         if($fetch === 'one'){
@@ -205,7 +215,8 @@ class QueryBuilder
         $operators = ['=', '<', '>', '<=', '>='];
         if (!in_array($operator, $operators)) die('Operator of this type is not supported!');
 
-        $this->action->where("{$column} {$operator} :{$column}")
+        $this->action
+            ->where("{$column} {$operator} :{$column}")
             ->bindValue($column, $value);
 
         return $this;
