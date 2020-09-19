@@ -6,12 +6,16 @@
 use Suvarivaza\AQBN\QueryBuilder;
 ```
 
-You can get an instance of the QueryBuilder class anywhere using the static getInstance () method
-To do this, you need to specify the data for connecting to PDO in the config.php file
+You can get an instance of the QueryBuilder class anywhere using the static getInstance () method.
 Like:
 ```
 $db = QueryBuilder::getInstance();
 ```
+Create a configuration file for connecting to the database at the path /configs/configDb.php (used by default)
+Or define the CONFIG_DB_PATH constant in your index.php
+Like:
+define('CONFIG_DB_PATH', '/path/configDb.php');
+
 Or you can create an object of the QueryBuilder class and pass the PDO connection to the constructor
 Like:
 ```

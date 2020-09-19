@@ -14,6 +14,7 @@ class QueryBuilder
 {
 
     public static $instance = null;
+    public static $errors = [];
     private $pdo;
     private $queryFactory;
     protected $prefix = '';
@@ -35,27 +36,49 @@ class QueryBuilder
     }
 
 
-    public static function getInstance()
+    public static function getInstance($config = null)
     {
 
         if(!isset(self::$instance)){
-            $config = include 'config.php';
-            try {
-                $db_server = $config['host'];
-                $db_user = $config['db_user'];
-                $db_password = $config['db_password'];
-                $db_name = $config['db_name'];
-                $charset = $config['charset'];
-                $dsn = "mysql:host=$db_server;dbname=$db_name;charset=$charset";
-                $options = $config['options'];
-                $pdo = new PDO($dsn, $db_user, $db_password, $options);
 
-            } catch (PDOException $exception) {
-                die($exception->getMessage());
+            if(!$config){
+
+                if (defined('CONFIG_DB_PATH')) {
+                    $config = include $_SERVER['DOCUMENT_ROOT'] . CONFIG_DB_PATH;
+                } else {
+                    $config = include $_SERVER['DOCUMENT_ROOT'] . '/configs/configDb.php';
+                }
             }
+
+            $pdo = self::getPdo($config);
             self::$instance = new QueryBuilder($pdo, new QueryFactory('mysql'));
         }
+
         return self::$instance;
+    }
+
+    private static function getPdo($config){
+
+        try {
+            $db_server = $config['host'];
+            $db_user = $config['db_user'];
+            $db_password = $config['db_password'];
+            $db_name = $config['db_name'];
+            $charset = $config['charset'];
+            $dsn = "mysql:host=$db_server;dbname=$db_name;charset=$charset";
+            $options = $config['options'];
+            $pdo = new PDO($dsn, $db_user, $db_password, $options);
+
+        } catch (PDOException $exception) {
+            self::$errors['PDOException'] = $exception->getMessage();
+            die($exception->getMessage());
+        }
+
+        return $pdo;
+    }
+
+    public function errors(){
+        return self::$errors;
     }
 
 
@@ -209,9 +232,6 @@ class QueryBuilder
         return $this->execute(null, $data_type);
     }
 
-    public function getPdo(){
-        return $this->pdo;
-    }
 
     public function limit($value){
         $this->action->limit($value);
