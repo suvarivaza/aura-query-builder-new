@@ -3,8 +3,8 @@
 return  [
     'driver' => 'mysql', // Db driver
     'host' => 'localhost',
-    'db_name' => 'db_name',
-    'db_user' => 'db_user',
+    'db_name' => 'app3',
+    'db_user' => 'root',
     'db_password' => '',
     'charset' => 'utf8', // Optional
     'prefix' => '', // Table prefix, optional
