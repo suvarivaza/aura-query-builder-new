@@ -1,0 +1,18 @@
+{
+  "name": "suvarivaza/AuraQueryBuilderNew",
+  "description": "AuraQueryBuilderNew",
+  "keywords": ["database", "SQL", "query builder"],
+  "license": "MIT",
+  "homepage": "https://github.com/suvarivaza/AuraQueryBuilderNew",
+  "authors": [
+    {
+      "name": "suvarivaza",
+      "email": "42-36-42@mail.ru"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "aura/sqlquery": "3.x-dev",
+    "ext-pdo": "*"
+  }
+}

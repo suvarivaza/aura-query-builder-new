@@ -7,9 +7,13 @@ use Aura\SqlQuery\QueryFactory;
 use PDO;
 use PDOException;
 
+/**
+ * @property string error
+ */
 class QueryBuilder
 {
 
+    public static $instance = null;
     private $pdo;
     private $queryFactory;
     protected $prefix = '';
@@ -26,10 +30,32 @@ class QueryBuilder
      */
     function __construct(PDO $pdo, QueryFactory $QueryFactory)
     {
-
-
         $this->pdo = $pdo; // PDO connection
         $this->queryFactory = $QueryFactory; // Object QueryFactory class for database
+    }
+
+
+    public static function getInstance()
+    {
+
+        if(!isset(self::$instance)){
+            $config = include 'config.php';
+            try {
+                $db_server = $config['host'];
+                $db_user = $config['db_user'];
+                $db_password = $config['db_password'];
+                $db_name = $config['db_name'];
+                $charset = $config['charset'];
+                $dsn = "mysql:host=$db_server;dbname=$db_name;charset=$charset";
+                $options = $config['options'];
+                $pdo = new PDO($dsn, $db_user, $db_password, $options);
+
+            } catch (PDOException $exception) {
+                die($exception->getMessage());
+            }
+            self::$instance = new QueryBuilder($pdo, new QueryFactory('mysql'));
+        }
+        return self::$instance;
     }
 
 
