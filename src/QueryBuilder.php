@@ -15,10 +15,10 @@ class QueryBuilder
 
     public static $instance = null;
     public static $errors = [];
-    private $pdo;
-    private $queryFactory;
-    protected $prefix = '';
-    protected $action;
+    private  $pdo;
+    private static $queryFactory;
+    private $prefix = '';
+    private $action;
 
 
     /*
@@ -32,7 +32,7 @@ class QueryBuilder
     function __construct(PDO $pdo, QueryFactory $QueryFactory)
     {
         $this->pdo = $pdo; // PDO connection
-        $this->queryFactory = $QueryFactory; // Object QueryFactory class for database
+        self::$queryFactory = $QueryFactory; // Object QueryFactory class for database
     }
 
 
@@ -89,7 +89,7 @@ class QueryBuilder
      */
     public function select($cols = '*'){
 
-        $select = $this->queryFactory->newSelect();
+        $select = self::$queryFactory->newSelect();
         $this->action = $select->cols([$cols]);
 
         return $this;
@@ -102,7 +102,7 @@ class QueryBuilder
      */
     public function insert($table)
     {
-        $insert = $this->queryFactory->newInsert();
+        $insert = self::$queryFactory->newInsert();
         $this->action =  $insert->into("{$this->prefix}{$table}");
         return $this;
     }
@@ -127,7 +127,7 @@ class QueryBuilder
      */
     public function from($table)
     {
-        $this->action->from("{$this->prefix}{$table}");
+        $this->action->fromRaw("{$this->prefix}{$table}");
         return $this;
     }
 
@@ -139,7 +139,7 @@ class QueryBuilder
      */
     public function update($table)
     {
-        $update = $this->queryFactory->newUpdate();
+        $update = self::$queryFactory->newUpdate();
         $this->action = $update->table("{$this->prefix}{$table}");
         return $this;
     }
@@ -151,7 +151,7 @@ class QueryBuilder
     */
     public function delete($table)
     {
-        $delete = $this->queryFactory->newDelete();
+        $delete = self::$queryFactory->newDelete();
         $this->action = $delete->from("{$this->prefix}{$table}");
         return $this;
     }
