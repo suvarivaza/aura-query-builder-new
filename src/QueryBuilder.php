@@ -15,10 +15,11 @@ class QueryBuilder
 
     public static $instance = null;
     public static $errors = [];
-    private  $pdo;
+    private $pdo;
     private static $queryFactory;
     private static $prefix = '';
     private $action;
+    private $count;
 
 
     /*
@@ -39,10 +40,9 @@ class QueryBuilder
     public static function getInstance($config = null)
     {
 
+        if (!isset(self::$instance)) {
 
-        if(!isset(self::$instance)){
-
-            if(!$config){
+            if (!$config) {
 
                 if (defined('CONFIG_DB_PATH')) {
                     $config = include $_SERVER['DOCUMENT_ROOT'] . CONFIG_DB_PATH;
@@ -59,7 +59,8 @@ class QueryBuilder
         return self::$instance;
     }
 
-    private static function getPdo($config){
+    private static function getPdo($config)
+    {
 
         self::$prefix = $config['prefix'];
 
@@ -82,7 +83,8 @@ class QueryBuilder
         return $pdo;
     }
 
-    public function errors(){
+    public function errors()
+    {
         return self::$errors;
     }
 
@@ -92,7 +94,8 @@ class QueryBuilder
      * @param string $cols
      * @return self
      */
-    public function select($cols = '*'){
+    public function select($cols = '*')
+    {
 
         $select = self::$queryFactory->newSelect();
         $this->action = $select->cols([$cols]);
@@ -109,7 +112,7 @@ class QueryBuilder
     {
         $insert = self::$queryFactory->newInsert();
         $table = self::$prefix . $table;
-        $this->action =  $insert->into($table);
+        $this->action = $insert->into($table);
         return $this;
     }
 
@@ -119,7 +122,8 @@ class QueryBuilder
      * @param array $data - Array of key-values
      * @return self
      */
-    public function set($data){
+    public function set($data)
+    {
 
         $this->action->cols($data);
 
@@ -189,16 +193,31 @@ class QueryBuilder
             $pdo_fetch_type = PDO::FETCH_ASSOC;
         }
 
+
         $sth = $this->pdo->prepare($this->action->getStatement());
 
         $sth->execute($this->action->getBindValues());
 
-        if($fetch === 'one'){
-            return $sth->fetch($pdo_fetch_type);
+        if ($fetch === 'one') {
+            $result = $sth->fetch($pdo_fetch_type);
         } else {
-            return $sth->fetchAll($pdo_fetch_type);
+            $result = $sth->fetchAll($pdo_fetch_type);
         }
 
+        $this->count = count($result);
+
+        return $result;
+
+    }
+
+    public function getCount()
+    {
+        return $this->count;
+    }
+
+    public function exists()
+    {
+        return $this->count ? true : false;
     }
 
     /*
@@ -212,12 +231,19 @@ class QueryBuilder
     public function where($column, $operator, $value)
     {
 
-        $operators = ['=', '<', '>', '<=', '>='];
+        $operators = ['=', '<', '>', '<=', '>=', 'IN'];
         if (!in_array($operator, $operators)) die('Operator of this type is not supported!');
 
-        $this->action
-            ->where("{$column} {$operator} :{$column}")
-            ->bindValue($column, $value);
+        if ($operator === 'IN') {
+
+            $this->action
+                ->where("{$column} {$operator} (:{$column})", [$column => $value]);
+            //->bindValue([$column => $value]);
+        } else {
+            $this->action
+                ->where("{$column} {$operator} :{$column}")
+                ->bindValue($column, $value);
+        }
 
         return $this;
     }
@@ -244,24 +270,68 @@ class QueryBuilder
     }
 
 
-    public function limit($value){
+    public function limit($value)
+    {
         $this->action->limit($value);
         return $this;
     }
 
-    public function offset($value){
+    public function offset($value)
+    {
         $this->action->offset($value);
         return $this;
     }
 
-    public function setPaging($value){
+    public function orderBy($column)
+    {
+        $this->action->orderBy([$column]);
+        return $this;
+    }
+
+    public function setPaging($value)
+    {
         $this->action->setPaging($value);
         return $this;
     }
 
-    public function page($value){
+    public function page($value)
+    {
         $this->action->page($value);
         return $this;
+    }
+
+    public function countFields($table, $where)
+    {
+        $column = $where[0];
+        $operator = $where[1];
+        $value = $where[2];
+
+        $count = $this
+            ->select('COUNT(*)')
+            ->from($table)
+            ->where($column, $operator, $value );
+
+        return $count;
+
+    }
+
+
+    public function testSelect(){
+        $select = self::$queryFactory->newSelect();
+        $select
+            ->cols(['*'])
+            ->fromRaw('cththemes_qcomment_projects_orders')
+            //->where('project_id = :project_id', ['project_id' => 1733569]);
+        ->where('project_id IN (?, ?, ?)', 1733569, 1735642, 1733570);
+        //->where('project_id IN (:project_ids)');
+
+        $sth = $this->pdo->prepare($select->getStatement());
+
+        //$sth = $this->pdo->prepare("SELECT * FROM `cththemes_qcomment_projects_orders` WHERE `project_id` IN (:project_ids)");
+
+        $sth->execute($select->getBindValues());
+        $result = $sth->fetchAll();
+        return $result;
     }
 
 }

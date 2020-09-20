@@ -14,5 +14,10 @@
   "require": {
     "aura/sqlquery": "3.x-dev",
     "ext-pdo": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Suvarivaza\\AQBN\\": "src/"
+    }
   }
 }
