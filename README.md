@@ -51,28 +51,43 @@ Or of course you can use PHP DI..
 
 Methods:
 
+SELECT
 ```
-$result = $db
-            ->select()
-            ->from('posts')
+$result = $db->select() // empty value equals '*'
+            ->from('posts') // table name
             ->where('id', '=', 1)
-            ->getAll('obj');
+            ->getAll('obj'); // can by: 'assoc', 'obj', 'both', 'num'. empty value equals 'assoc'
 
-        $db
-            ->insert('posts')
+$result = $db->select('id') // column name
+            ->from('posts') // table name
+            ->where('id', '=', 1)
+            ->getOne();     
+            
+$result = $db->select(['project_id' , 'order_id']) // if you need to get several columns
+            ->from('qcomment_projects_orders')
+            ->where('order_id', '=', 123)
+            ->getValue('project_id'); // if you need to get only one value
+                
+```
+
+INSERT
+```            
+        $db->insert('posts')
             ->set(['title' => 'post title'])
             ->execute();
+```
 
-        $db
-            ->update('posts')
+UPDATE
+```           
+        $db->update('posts')
             ->set(['title' => 'new post title'])
             ->where('id', '=', 1)
             ->execute();
+```
 
-        $db
-            ->delete('posts')
+DELETE
+```    
+        $db->delete('posts')
             ->where('id', '=', 1)
             ->execute();
-            
-
 ```

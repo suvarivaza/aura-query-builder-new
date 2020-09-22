@@ -14,21 +14,28 @@ class QueryBuilder
 {
 
     public static $instance = null;
-    private  $errors;
-    private $pdo;
-    private static $queryFactory;
-    private static $prefix = '';
 
-    private $action = '';
+
+    private $pdo;
+
+    /**
+     * @var \Aura\SqlQuery\QueryFactory $queryFactory
+     */
+    private $queryFactory;
 
     /**
      * @var \Aura\SqlQuery\Common\SelectInterface $query
      */
     private $query;
 
+    private static $prefix = '';
+
+    private $action = '';
+
+    private  $errors;
+
     private $count;
 
-    private $table;
 
 
     /*
@@ -42,10 +49,14 @@ class QueryBuilder
     function __construct(PDO $pdo, QueryFactory $QueryFactory)
     {
         $this->pdo = $pdo; // PDO connection
-        self::$queryFactory = $QueryFactory; // Object QueryFactory class for database
+        $this->queryFactory = $QueryFactory; // Object QueryFactory class for database
     }
 
 
+    /**
+     * @param null $config
+     * @return QueryBuilder|null
+     */
     public static function getInstance($config = null)
     {
 
@@ -96,28 +107,30 @@ class QueryBuilder
 
     /*
      * insert
-     * @param string $cols
+     * @param $cols | string
      * @return self
      */
     public function select($cols = '*')
     {
 
+        if(!is_array($cols)) $cols = [$cols];
+
         $this->action = 'select';
-        $select = self::$queryFactory->newSelect();
-        $this->query = $select->cols([$cols]);
+        $select = $this->queryFactory->newSelect();
+        $this->query = $select->cols($cols);
 
         return $this;
     }
 
     /*
      * insert
-     * @param string $table - table name
+     * @param $table | string
      * @return self
      */
     public function insert($table)
     {
         $this->action = 'insert';
-        $insert = self::$queryFactory->newInsert();
+        $insert = $this->queryFactory->newInsert();
         $table = self::$prefix . $table;
         $this->query = $insert->into($table);
         return $this;
@@ -160,10 +173,10 @@ class QueryBuilder
     public function update($table)
     {
 
-        $this->table = $table;
+
         $this->action = 'update';
         $table = self::$prefix . $table;
-        $update = self::$queryFactory->newUpdate();
+        $update = $this->queryFactory->newUpdate();
         $this->query = $update->table($table);
 
         return $this;
@@ -177,7 +190,7 @@ class QueryBuilder
     public function delete($table)
     {
         $this->action = 'delete';
-        $delete = self::$queryFactory->newDelete();
+        $delete = $this->queryFactory->newDelete();
         $table = self::$prefix . $table;
         $this->query = $delete->from($table);
 
@@ -194,6 +207,7 @@ class QueryBuilder
     public function execute($fetch = null, $data_type = null)
     {
 
+
         $pdo_fetch_types = [
             'assoc' => PDO::FETCH_ASSOC,
             'obj' => PDO::FETCH_OBJ,
@@ -209,8 +223,6 @@ class QueryBuilder
 
         try {
 
-            if($_GET['super_user']) var_dump($this->query->getStatement());
-
             $sth = $this->pdo->prepare($this->query->getStatement());
             $result = $sth->execute($this->query->getBindValues());
 
@@ -219,6 +231,7 @@ class QueryBuilder
             } else if ($fetch === 'all') {
                 $result = $sth->fetchAll($pdo_fetch_type);
             }
+
 
         } catch (PDOException $exception) {
             $this->errors = $exception->getMessage();
@@ -230,22 +243,24 @@ class QueryBuilder
 
     }
 
-    public function getCount()
-    {
-        return $this->count;
-    }
 
-    public function exists()
-    {
-        return $this->count ? true : false;
+
+    /**
+     * @param $were | string can any query after were (attention! not safe!)
+     * @return self
+     */
+    public function customWere($were){
+        $this->query
+            ->where($were);
+        return $this;
     }
 
     /*
      * where
      * Used in: SELECT, UPDATE, DELETE
-     * @param string $column
-     * @param string $operator
-     * @param string|int $value
+     * @param string $column | string
+     * @param string $operator | string - mast by: '=', '<', '>', '<=', '>='
+     * @param string|int $value | string | int
      * @return self
      */
     public function where($column, $operator, $value)
@@ -273,6 +288,12 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * @param $column | string
+     * @param $operator | string - mast by: '=', '<', '>', '<=', '>='
+     * @param $value | string | int
+     * @return self
+     */
     public function orWhere($column, $operator, $value)
     {
 
@@ -296,63 +317,120 @@ class QueryBuilder
         return $this->execute('one', $data_type);
     }
 
+
+    /**
+     * @return bool
+     */
+    public function exists()
+    {
+        return $this->execute('one') ? true : false;
+    }
+
     /*
      * getAll
-     * @param string $data_type - can by: 'assoc', 'obj', 'both', 'num'
+     * @param $data_type | string : can by: 'assoc', 'obj', 'both', 'num'
      * @return all results execute()
      */
     public function getAll($data_type = null)
     {
-
         return $this->execute('all', $data_type);
     }
 
+    public function getValue($column = null)
+    {
+        if(!$column)
+        {
+            $cols = $this->query->getCols();
+            $column = $cols[0];
+        }
 
+
+        dd($this->execute('one'));
+
+        return $this->execute('one')[$column];
+    }
+
+
+    /**
+     * @param $value
+     * @return self
+     */
     public function limit($value)
     {
         $this->query->limit($value);
         return $this;
     }
 
+    /**
+     * @param $value
+     * @return self
+     */
     public function offset($value)
     {
         $this->query->offset($value);
         return $this;
     }
 
+
+    /**
+     * @param $column
+     * @return $this
+     */
     public function orderBy($column)
     {
         $this->query->orderBy([$column]);
         return $this;
     }
 
+
+    /**
+     * @param $value
+     * @return $this
+     */
     public function setPaging($value)
     {
         $this->query->setPaging($value);
         return $this;
     }
 
+
+    /**
+     * @param $value
+     * @return $this
+     */
     public function page($value)
     {
         $this->query->page($value);
         return $this;
     }
 
-    public function countFields($table, $where)
+
+    /**
+     * @return $count | int :return the count of rows satisfying the selection condition
+     */
+    public function getCount()
     {
-        $column = $where[0];
-        $operator = $where[1];
-        $value = $where[2];
-
-        $count = $this
-            ->select('COUNT(*)')
-            ->from($table)
-            ->where($column, $operator, $value);
-
+        $this->query->cols(['COUNT(*)']);
+        $count = $this->execute('all')[0]["COUNT(*)"];
         return $count;
-
     }
 
+
+    /**
+     * @param $field | string
+     * @return $sum | int :return the sum of values satisfying the selection condition
+     */
+    public function getSum($field)
+    {
+        $this->query->cols(["SUM({$field})"]);
+        $sum = $this->execute('all')[0]["SUM({$field})"];
+        return $sum;
+    }
+
+
+    /**
+     * @return mixed
+     */
     public function error()
     {
         return $this->errors;
