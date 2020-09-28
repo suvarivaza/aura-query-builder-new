@@ -34,8 +34,16 @@ class QueryBuilder
 
     private  $errors;
 
+    private $table;
+
     private $count;
 
+
+    private function reset(){
+        unset($this->query);
+        unset($this->count);
+        unset($this->table);
+    }
 
 
     /*
@@ -113,9 +121,11 @@ class QueryBuilder
     public function select($cols = '*')
     {
 
+        $this->reset();
+        $this->action = 'select';
+
         if(!is_array($cols)) $cols = [$cols];
 
-        $this->action = 'select';
         $select = $this->queryFactory->newSelect();
         $this->query = $select->cols($cols);
 
@@ -129,13 +139,50 @@ class QueryBuilder
      */
     public function insert($table)
     {
+        $this->reset();
         $this->action = 'insert';
+
         $insert = $this->queryFactory->newInsert();
         $table = self::$prefix . $table;
         $this->query = $insert->into($table);
         return $this;
     }
 
+
+    /*
+ * update
+ * @param string $table - table name
+ * @return self
+ */
+    public function update($table)
+    {
+
+        $this->reset();
+        $this->action = 'update';
+
+        $table = self::$prefix . $table;
+        $update = $this->queryFactory->newUpdate();
+        $this->query = $update->table($table);
+
+        return $this;
+    }
+
+    /*
+* update
+* @param string $table - table name
+* @return self
+*/
+    public function delete($table)
+    {
+        $this->reset();
+        $this->action = 'delete';
+
+        $delete = $this->queryFactory->newDelete();
+        $table = self::$prefix . $table;
+        $this->query = $delete->from($table);
+
+        return $this;
+    }
 
     /*
      * set
@@ -161,41 +208,12 @@ class QueryBuilder
         $table = self::$prefix . $table;
         $this->query->fromRaw($table);
 
-        return $this;
-    }
-
-
-    /*
-     * update
-     * @param string $table - table name
-     * @return self
-     */
-    public function update($table)
-    {
-
-
-        $this->action = 'update';
-        $table = self::$prefix . $table;
-        $update = $this->queryFactory->newUpdate();
-        $this->query = $update->table($table);
+        $this->table = $table;
 
         return $this;
     }
 
-    /*
-    * update
-    * @param string $table - table name
-    * @return self
-    */
-    public function delete($table)
-    {
-        $this->action = 'delete';
-        $delete = $this->queryFactory->newDelete();
-        $table = self::$prefix . $table;
-        $this->query = $delete->from($table);
 
-        return $this;
-    }
 
     /*
      * execute
@@ -235,6 +253,7 @@ class QueryBuilder
 
         } catch (PDOException $exception) {
             $this->errors = $exception->getMessage();
+
             mail('42-36-42@mail.ru', 'ERROR!!! Database QueryBuilder! ', 'ERROR!!! Database QueryBuilder: ' . $exception->getMessage());
             die($exception->getMessage());
         }
@@ -265,6 +284,9 @@ class QueryBuilder
      */
     public function where($column, $operator, $value)
     {
+        if($this->action === 'select' and !$this->table) {
+            die("QueryBuilder where() ERROR! The SELECT query type must contain calling from('table') method before calling the method where()!");
+        }
 
         $operators = ['=', '<', '>', '<=', '>=', 'IN'];
         if (!in_array($operator, $operators)) die('Operator of this type is not supported!');
@@ -343,9 +365,6 @@ class QueryBuilder
             $cols = $this->query->getCols();
             $column = $cols[0];
         }
-
-
-        dd($this->execute('one'));
 
         return $this->execute('one')[$column];
     }
