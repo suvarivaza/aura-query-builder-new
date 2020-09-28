@@ -253,8 +253,6 @@ class QueryBuilder
 
         } catch (PDOException $exception) {
             $this->errors = $exception->getMessage();
-
-            mail('42-36-42@mail.ru', 'ERROR!!! Database QueryBuilder! ', 'ERROR!!! Database QueryBuilder: ' . $exception->getMessage());
             die($exception->getMessage());
         }
 
