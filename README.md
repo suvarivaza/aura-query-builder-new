@@ -67,7 +67,7 @@ $result = $db->select(['project_id' , 'order_id']) // if you need to get several
             ->from('qcomment_projects_orders')
             ->where('order_id', '=', 123)
             ->getValue('project_id'); // if you need to get only one value
-                
+
 ```
 
 INSERT
